@@ -10,21 +10,30 @@ import 'package:tflite_flutter_helper/tflite_flutter_helper.dart';
 import 'package:image/image.dart' as imageLib;
 
 class Classifier {
+  /// Instance of Interpreter
   Interpreter _interpreter;
 
+  /// Instance of loaded labels
   List<String> _labels;
+
   static const String MODEL_FILE_NAME = "detect.tflite";
 
   static const String LABEL_FILE_NAME = "labelmap.txt";
+
+  /// Input size of image (height = width = 300)
   static const int INPUT_SIZE = 300;
 
-  List<int> _inputShape;
-  TfLiteType _inputType;
+  /// Result score threshold
+  static const double THRESHOLD = 0.5;
 
+  /// Shapes of output tensors
   List<List<int>> _outputShapes;
 
+  /// Types of output tensors
   List<TfLiteType> _outputTypes;
-  static const int NUM_RESULTS = 3;
+
+  /// Number of results to show
+  static const int NUM_RESULTS = 10;
 
   Classifier({
     Interpreter interpreter,
@@ -34,6 +43,7 @@ class Classifier {
     loadLabels(labels: labels);
   }
 
+  /// Loads interpreter from asset
   void loadModel({Interpreter interpreter}) async {
     try {
       _interpreter = interpreter ??
@@ -42,10 +52,6 @@ class Classifier {
             options: InterpreterOptions()..threads = 4,
           );
 
-      var inputTensors = _interpreter.getInputTensor(0);
-      _inputShape = inputTensors.shape;
-      _inputType = inputTensors.type;
-
       var outputTensors = _interpreter.getOutputTensors();
       _outputShapes = [];
       _outputTypes = [];
@@ -53,18 +59,16 @@ class Classifier {
         _outputShapes.add(tensor.shape);
         _outputTypes.add(tensor.type);
       });
-
-//      print("Interpreter created successfully");
     } catch (e) {
       print("Error while creating interpreter: $e");
     }
   }
 
+  /// Loads labels from assets
   void loadLabels({List<String> labels}) async {
     try {
       _labels =
           labels ?? await FileUtil.loadLabels("assets/" + LABEL_FILE_NAME);
-//      print("Labels loaded successfully");
     } catch (e) {
       print("Error while loading labels: $e");
     }
@@ -82,8 +86,6 @@ class Classifier {
   }
 
   List predict(imageLib.Image image) {
-    print("InputImage: height: ${image.height} width: ${image.width}");
-
     if (_interpreter == null) {
       print("Interpreter not initialized");
       return null;
@@ -134,39 +136,23 @@ class Classifier {
 
     for (int i = 0; i < resultsCount; i++) {
       var label = _labels.elementAt(outputClasses.getIntValue(i) + labelOffset);
+      var score = outputScores.getDoubleValue(i);
 
-      Rect rect = invertProcessor.inverseTransformRect(
+      Rect transformedRect = invertProcessor.inverseTransformRect(
           locations[i], image.width, image.height);
 
-//      Rect rect = locations[i];
-      recognitions.add(
-        Recognition(i, label, outputScores.getDoubleValue(i), rect),
-      );
+      if (score > THRESHOLD) {
+        recognitions.add(
+          Recognition(i, label, score, transformedRect),
+        );
+      }
     }
-
-//    return [imageLib.PngEncoder().encodeImage(inputImage.image), recognitions];
-
-//    Map<String, int> counters = Map();
-//    final List<Recognition> results = List();
-//    for (var index = 0; index < numLocations.getIntValue(0); index++) {
-////      if (outputScores.getDoubleValue(index) < threshold) continue;
-//
-//      String detectedClass =
-//          _labels[labelOffset + outputClasses.getIntValue(index)];
-//
-//      final top = max(0.0, outputLocations.getDoubleValue(index * 4 + 0));
-//      final left = max(0.0, outputLocations.getDoubleValue(index * 4 + 1));
-//      final bottom = min(1.0, outputLocations.getDoubleValue(index * 4 + 2));
-//      final right = min(1.0, outputLocations.getDoubleValue(index * 4 + 3));
-//
-//      results.add(
-//        Recognition(index, detectedClass, outputScores.getDoubleValue(index),
-//            Rect.fromLTRB(left*INPUT_SIZE, top*INPUT_SIZE, right*INPUT_SIZE, bottom*INPUT_SIZE)),
-//      );
-//    }
     return recognitions;
   }
 
+  /// Gets the interpreter instance
   Interpreter get interpreter => _interpreter;
+
+  /// Gets the loaded labels
   List<String> get labels => _labels;
 }

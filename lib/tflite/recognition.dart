@@ -21,22 +21,22 @@ class Recognition {
   Rect get location => _location;
 
   Rect get renderLocation {
-//    print(ResizeOp(4128, 2322, ResizeMethod.BILINEAR).inverseTransform(
-//        Point(location.topLeft.dx, location.topLeft.dy), 640, 360));
+    // ratioX = screenWidth / imageInputWidth
+    // ratioY = ratioX if image fits screenWidth with aspectRatio = constant
 
-    double ratioX = 360 / 2322;
-    double ratioY = 640 / 4128;
-//    double ratioX = 1;
-//    double ratioY = 1;
-    double transLeft = location.left * ratioX;
-    double transTop = location.top * ratioY;
-    double transWidth = location.width * ratioX;
-    double transHeight = location.height * ratioY;
-    Rect result = Rect.fromLTWH(transLeft, transTop, transWidth, transHeight);
-    if (label == "chair") {
-      print(result);
-    }
-    return result;
+    double ratioX = CameraViewSingleton.ratio;
+    double ratioY = ratioX;
+
+    double transLeft = max(0.1, location.left * ratioX);
+    double transTop = max(0.1, location.top * ratioY);
+    double transWidth = min(
+        location.width * ratioX, CameraViewSingleton.actualPreviewSize.width);
+    double transHeight = min(
+        location.height * ratioY, CameraViewSingleton.actualPreviewSize.height);
+
+    Rect transformedRect =
+        Rect.fromLTWH(transLeft, transTop, transWidth, transHeight);
+    return transformedRect;
   }
 
   @override

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:object_detection/tflite/recognition.dart';
 import 'package:object_detection/ui/box_widget.dart';
-import 'package:object_detection/ui/detection_preview.dart';
 import 'camera_view.dart';
 
 class HomeView extends StatefulWidget {
@@ -11,33 +10,14 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   List<Recognition> results;
-
-  Image image;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            height: 600,
-            child: Stack(
-              children: <Widget>[
-                CameraView(resultsCallback, imagePreviewCallback),
-                boundingBoxes(results),
-              ],
-            ),
-          ),
-          FlatButton(
-            child: Text('Preview'),
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => DetectionPreview(
-                        image: image,
-                      )));
-            },
-          )
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: <Widget>[
+          CameraView(resultsCallback),
+          boundingBoxes(results),
         ],
       ),
     );
@@ -60,12 +40,6 @@ class _HomeViewState extends State<HomeView> {
     print(results);
     setState(() {
       this.results = results;
-    });
-  }
-
-  void imagePreviewCallback(Image image) {
-    setState(() {
-      this.image = image;
     });
   }
 }

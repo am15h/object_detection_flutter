@@ -21,7 +21,7 @@ class BoxWidget extends StatelessWidget {
         width: result.renderLocation.width,
         height: result.renderLocation.height,
         decoration: BoxDecoration(
-          border: Border.all(color: color),
+          border: Border.all(color: color, width: 2),
         ),
         child: Align(
           alignment: Alignment.topLeft,
@@ -32,7 +32,7 @@ class BoxWidget extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(result.label),
-                  Text(result.score.toStringAsFixed(2)),
+                  Text(" " + result.score.toStringAsFixed(2)),
                 ],
               ),
             ),

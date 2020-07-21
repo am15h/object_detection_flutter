@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -10,12 +11,10 @@ import 'package:object_detection/tflite/recognition.dart';
 import 'package:object_detection/ui/camera_view_singleton.dart';
 import 'package:object_detection/utils/image_utils.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
-import 'package:tflite_flutter_helper/tflite_flutter_helper.dart';
 
 class CameraView extends StatefulWidget {
   final Function(List<Recognition> recognitions) resultsCallback;
-  final Function(Image image) previewCallback;
-  const CameraView(this.resultsCallback, this.previewCallback);
+  const CameraView(this.resultsCallback);
   @override
   _CameraViewState createState() => _CameraViewState();
 }
@@ -40,13 +39,27 @@ class _CameraViewState extends State<CameraView> {
 
   void initializeCamera() async {
     cameras = await availableCameras();
-    controller =
-        CameraController(cameras[0], ResolutionPreset.medium, enableAudio: false);
+    controller = CameraController(cameras[0], ResolutionPreset.medium,
+        enableAudio: false);
     await controller.initialize();
     await Future.delayed(Duration(milliseconds: 200));
     controller.startImageStream(onLatestImageAvailable);
 
+    // Camera view preview size
     Size previewSize = controller.value.previewSize;
+    CameraViewSingleton.inputImageSize = previewSize;
+
+    // Screen size
+    Size screenSize = MediaQuery.of(context).size;
+    CameraViewSingleton.screenSize = screenSize;
+
+    if (Platform.isAndroid) {
+      // On Android image is initially rotated by 90 degrees
+      CameraViewSingleton.ratio = screenSize.width / previewSize.height;
+    } else {
+      // For iOS
+      CameraViewSingleton.ratio = screenSize.width / previewSize.width;
+    }
   }
 
   @override
@@ -75,16 +88,7 @@ class _CameraViewState extends State<CameraView> {
         "image": cameraImage,
       });
 
-      ui.Codec codec = await ui.instantiateImageCodec(results[0] as Uint8List,
-          targetWidth: 300, targetHeight: 300);
-
-      ui.Image resultImage = (await codec.getNextFrame()).image;
-
-      ByteData resultBytes = await generateResultImage(resultImage, results[1]);
-
-      widget.previewCallback(Image.memory(resultBytes.buffer.asUint8List()));
-
-      widget.resultsCallback(results[1]);
+      widget.resultsCallback(results);
       setState(() {
         predicting = false;
       });
@@ -98,28 +102,4 @@ List inference(Map<String, dynamic> params) {
   var classifier =
       Classifier(interpreter: interpreter, labels: params["labels"]);
   return classifier.predict(image);
-}
-
-Future<ByteData> generateResultImage(
-    ui.Image image, List<Recognition> rect) async {
-  var recorder = ui.PictureRecorder();
-  var canvas = Canvas(recorder);
-
-  var paint = Paint()..style = PaintingStyle.stroke;
-
-  canvas.drawImage(image, Offset.zero, Paint());
-  rect.forEach((element) {
-    canvas.drawRect(
-        element.location,
-        paint
-          ..color = Color.fromRGBO(Random().nextInt(255), Random().nextInt(255),
-              Random().nextInt(255), 1));
-  });
-  canvas.save();
-
-  final picture = recorder.endRecording();
-  final img = await picture.toImage(image.width, image.height);
-  final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
-
-  return bytes;
 }
