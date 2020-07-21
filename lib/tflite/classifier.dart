@@ -17,7 +17,6 @@ class Classifier {
   List<String> _labels;
 
   static const String MODEL_FILE_NAME = "detect.tflite";
-
   static const String LABEL_FILE_NAME = "labelmap.txt";
 
   /// Input size of image (height = width = 300)
@@ -25,6 +24,12 @@ class Classifier {
 
   /// Result score threshold
   static const double THRESHOLD = 0.5;
+
+  /// [ImageProcessor] used to pre-process the image
+  ImageProcessor imageProcessor;
+
+  /// Padding the image to transform into square
+  int padSize;
 
   /// Shapes of output tensors
   List<List<int>> _outputShapes;
@@ -75,12 +80,13 @@ class Classifier {
   }
 
   TensorImage getProcessedImage(TensorImage inputImage) {
-    int padSize = max(inputImage.height, inputImage.width);
-    ImageProcessor imageProcessor = ImageProcessorBuilder()
-        .add(Rot90Op())
-        .add(ResizeWithCropOrPadOp(padSize, padSize))
-        .add(ResizeOp(INPUT_SIZE, INPUT_SIZE, ResizeMethod.BILINEAR))
-        .build();
+    padSize = max(inputImage.height, inputImage.width);
+    if (imageProcessor == null) {
+      imageProcessor = ImageProcessorBuilder()
+          .add(ResizeWithCropOrPadOp(padSize, padSize))
+          .add(ResizeOp(INPUT_SIZE, INPUT_SIZE, ResizeMethod.BILINEAR))
+          .build();
+    }
     inputImage = imageProcessor.process(inputImage);
     return inputImage;
   }
@@ -136,14 +142,6 @@ class Classifier {
     // Using labelOffset = 1 as ??? at index 0
     int labelOffset = 1;
 
-    int padSize = max(image.height, image.width);
-
-    // Invert processor to find inverse of bounding box rect
-    ImageProcessor invertProcessor = ImageProcessorBuilder()
-        .add(ResizeWithCropOrPadOp(padSize, padSize))
-        .add(ResizeOp(INPUT_SIZE, INPUT_SIZE, ResizeMethod.BILINEAR))
-        .build();
-
     // Using bounding box utils for easy conversion of tensorbuffer to List<Rect>
     List<Rect> locations = BoundingBoxUtils.convert(
       tensor: outputLocations,
@@ -160,8 +158,8 @@ class Classifier {
       var score = outputScores.getDoubleValue(i);
 
       // inverse of rect
-      Rect transformedRect = invertProcessor.inverseTransformRect(
-          locations[i], image.width, image.height);
+      Rect transformedRect = imageProcessor.inverseTransformRect(
+          locations[i], image.height, image.width);
 
       if (score > THRESHOLD) {
         recognitions.add(
@@ -173,8 +171,8 @@ class Classifier {
     var predictElapsedTime =
         DateTime.now().millisecondsSinceEpoch - predictStartTime;
 
-    print(
-        'Classifier.predict | Pre-process: $preProcessElapsedTime ms | Inference: $inferenceTimeElapsed ms | Total: $predictElapsedTime');
+//    print(
+//        'Classifier.predict | Pre-process: $preProcessElapsedTime ms | Inference: $inferenceTimeElapsed ms | Total: $predictElapsedTime');
 
     return [
       recognitions,

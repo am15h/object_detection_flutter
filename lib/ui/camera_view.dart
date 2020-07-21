@@ -17,7 +17,7 @@ class CameraView extends StatefulWidget {
   _CameraViewState createState() => _CameraViewState();
 }
 
-class _CameraViewState extends State<CameraView> {
+class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   List<CameraDescription> cameras;
   CameraController controller;
   bool predicting;
@@ -29,6 +29,7 @@ class _CameraViewState extends State<CameraView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     initializeCamera();
     classifier = Classifier();
     predicting = false;
@@ -63,6 +64,26 @@ class _CameraViewState extends State<CameraView> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    switch (state) {
+      case AppLifecycleState.paused:
+        controller.stopImageStream();
+        break;
+      case AppLifecycleState.resumed:
+        await controller.startImageStream(onLatestImageAvailable);
+        break;
+      default:
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (controller == null || !controller.value.isInitialized) {
       return Container();
@@ -93,7 +114,7 @@ class _CameraViewState extends State<CameraView> {
       var uiThreadInferenceElapsedTime =
           DateTime.now().millisecondsSinceEpoch - uiThreadTimeStart;
 
-      print("UI Thread Inference Elapsed Time: $uiThreadInferenceElapsedTime");
+//      print("UI Thread Inference Elapsed Time: $uiThreadInferenceElapsedTime");
 
       widget.resultsCallback(results[0]);
       widget.statsCallback((results[1] as Stats)

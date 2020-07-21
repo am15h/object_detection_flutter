@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:object_detection/tflite/recognition.dart';
 import 'package:object_detection/tflite/stats.dart';
 import 'package:object_detection/ui/box_widget.dart';
+import 'package:object_detection/ui/camera_view_singleton.dart';
 
 import 'camera_view.dart';
 
@@ -65,21 +66,65 @@ class _HomeViewState extends State<HomeView> {
                         Icon(Icons.keyboard_arrow_up,
                             size: 48, color: Colors.orange),
                         (stats != null)
-                            ? Column(
-                                children: [
-                                  Text(
-                                      'Total prediction time: ${stats.totalElapsedTime}'),
-                                  SizedBox(
-                                    height: 4,
-                                  ),
-                                  Text(
-                                      'Pre processing Time: ${stats.preProcessingTime}'),
-                                  SizedBox(
-                                    height: 4,
-                                  ),
-                                  Text(
-                                      'Inference Time: ${stats.inferenceTime}'),
-                                ],
+                            ? Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Inference Time:'),
+                                        Text('${stats.inferenceTime} ms')
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 8,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Total prediction time:'),
+                                        Text('${stats.totalElapsedTime} ms')
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 8,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Classify.predict time:'),
+                                        Text('${stats.totalPredictTime} ms')
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 8,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Pre-processing time:'),
+                                        Text('${stats.preProcessingTime} ms')
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 8,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Frame'),
+                                        Text(
+                                            '${CameraViewSingleton.inputImageSize.width} X ${CameraViewSingleton.inputImageSize.height}')
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               )
                             : Container()
                       ],

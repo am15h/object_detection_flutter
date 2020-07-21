@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as imageLib;
@@ -39,6 +41,9 @@ class IsolateUtils {
             labels: isolateData.labels);
         imageLib.Image image =
             ImageUtils.convertYUV420ToImage(isolateData.cameraImage);
+        if (Platform.isAndroid) {
+          image = imageLib.copyRotate(image, 90);
+        }
         List results = classifier.predict(image);
         isolateData.responsePort.send(results);
       }
@@ -51,6 +56,7 @@ class IsolateData {
   int interpreterAddress;
   List<String> labels;
   SendPort responsePort;
+
   IsolateData(this.cameraImage, this.interpreterAddress, this.labels,
       this.responsePort);
 }
