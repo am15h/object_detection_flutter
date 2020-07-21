@@ -79,11 +79,16 @@ class _CameraViewState extends State<CameraView> {
         predicting = true;
       });
 
+      var uiThreadTimeStart = DateTime.now().millisecondsSinceEpoch;
       List results = await compute(inference, {
         "address": classifier.interpreter.address,
         "labels": classifier.labels,
         "image": cameraImage,
       });
+      var uiThreadInferenceElapsedTime =
+          DateTime.now().millisecondsSinceEpoch - uiThreadTimeStart;
+
+      print("UI Thread Inference Elapsed Time: $uiThreadInferenceElapsedTime");
 
       widget.resultsCallback(results);
       setState(() {

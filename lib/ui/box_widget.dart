@@ -1,16 +1,16 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:object_detection/tflite/recognition.dart';
 
+/// Bounding
 class BoxWidget extends StatelessWidget {
   final Recognition result;
 
   const BoxWidget({Key key, this.result}) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    Color color = Color.fromRGBO(
-        Random().nextInt(255), Random().nextInt(255), Random().nextInt(255), 1);
+    Color color = Colors.primaries[
+        (result.label.length + result.label.codeUnitAt(0)) %
+            Colors.primaries.length];
 
     return Positioned(
       left: result.renderLocation.left,
@@ -21,7 +21,7 @@ class BoxWidget extends StatelessWidget {
         width: result.renderLocation.width,
         height: result.renderLocation.height,
         decoration: BoxDecoration(
-          border: Border.all(color: color, width: 2),
+          border: Border.all(color: color, width: 3),
         ),
         child: Align(
           alignment: Alignment.topLeft,
