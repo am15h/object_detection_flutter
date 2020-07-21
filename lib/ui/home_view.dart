@@ -20,6 +20,11 @@ class _HomeViewState extends State<HomeView> {
           boundingBoxes(results),
         ],
       ),
+      bottomSheet: BottomSheet(
+          onClosing: null,
+          builder: (context) {
+            return Container();
+          }),
     );
   }
 

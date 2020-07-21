@@ -1,7 +1,4 @@
 import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -97,7 +94,7 @@ class _CameraViewState extends State<CameraView> {
 }
 
 List inference(Map<String, dynamic> params) {
-  imageLib.Image image = ImageUtils.convertYUV420ToARGB8888(params["image"]);
+  imageLib.Image image = ImageUtils.convertYUV420ToImage(params["image"]);
   var interpreter = Interpreter.fromAddress(params["address"]);
   var classifier =
       Classifier(interpreter: interpreter, labels: params["labels"]);
