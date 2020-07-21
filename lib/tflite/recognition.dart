@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:object_detection/ui/camera_view_singleton.dart';
-import 'package:tflite_flutter_helper/tflite_flutter_helper.dart';
 
 class Recognition {
   int _id;

@@ -1,13 +1,13 @@
 import 'dart:math';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as imageLib;
 import 'package:object_detection/tflite/recognition.dart';
-import 'package:object_detection/ui/camera_view_singleton.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:tflite_flutter_helper/tflite_flutter_helper.dart';
-import 'package:image/image.dart' as imageLib;
+
+import 'stats.dart';
 
 class Classifier {
   /// Instance of Interpreter
@@ -176,7 +176,13 @@ class Classifier {
     print(
         'Classifier.predict | Pre-process: $preProcessElapsedTime ms | Inference: $inferenceTimeElapsed ms | Total: $predictElapsedTime');
 
-    return recognitions;
+    return [
+      recognitions,
+      Stats(
+          totalPredictTime: predictElapsedTime,
+          inferenceTime: inferenceTimeElapsed,
+          preProcessingTime: preProcessElapsedTime)
+    ];
   }
 
   /// Gets the interpreter instance

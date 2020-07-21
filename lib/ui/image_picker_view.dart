@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:math';
-import 'package:image/image.dart' as img;
+
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:object_detection/tflite/classifier.dart';
 import 'package:object_detection/tflite/recognition.dart';

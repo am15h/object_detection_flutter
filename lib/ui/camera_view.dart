@@ -1,19 +1,18 @@
 import 'dart:io';
 import 'dart:isolate';
+
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as imageLib;
 import 'package:object_detection/tflite/classifier.dart';
 import 'package:object_detection/tflite/recognition.dart';
+import 'package:object_detection/tflite/stats.dart';
 import 'package:object_detection/ui/camera_view_singleton.dart';
-import 'package:object_detection/utils/image_utils.dart';
 import 'package:object_detection/utils/isolate_utils.dart';
-import 'package:tflite_flutter/tflite_flutter.dart';
 
 class CameraView extends StatefulWidget {
   final Function(List<Recognition> recognitions) resultsCallback;
-  const CameraView(this.resultsCallback);
+  final Function(Stats stats) statsCallback;
+  const CameraView(this.resultsCallback, this.statsCallback);
   @override
   _CameraViewState createState() => _CameraViewState();
 }
@@ -90,20 +89,22 @@ class _CameraViewState extends State<CameraView> {
         "image": cameraImage,
       };
 //      List results = await compute(inference, params);
-      List<Recognition> results = await inference(params);
+      List results = await inference(params);
       var uiThreadInferenceElapsedTime =
           DateTime.now().millisecondsSinceEpoch - uiThreadTimeStart;
 
       print("UI Thread Inference Elapsed Time: $uiThreadInferenceElapsedTime");
 
-      widget.resultsCallback(results);
+      widget.resultsCallback(results[0]);
+      widget.statsCallback((results[1] as Stats)
+        ..totalElapsedTime = uiThreadInferenceElapsedTime);
       setState(() {
         predicting = false;
       });
     }
   }
 
-  Future<List<Recognition>> inference(Map<String, dynamic> params) async {
+  Future<List> inference(Map<String, dynamic> params) async {
     ReceivePort responsePort = ReceivePort();
     if (isolateUtils.sendPort == null) {
       return [];

@@ -1,8 +1,8 @@
 import 'dart:isolate';
-import 'package:image/image.dart' as imageLib;
+
 import 'package:camera/camera.dart';
+import 'package:image/image.dart' as imageLib;
 import 'package:object_detection/tflite/classifier.dart';
-import 'package:object_detection/tflite/recognition.dart';
 import 'package:object_detection/utils/image_utils.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
@@ -39,7 +39,7 @@ class IsolateUtils {
             labels: isolateData.labels);
         imageLib.Image image =
             ImageUtils.convertYUV420ToImage(isolateData.cameraImage);
-        List<Recognition> results = classifier.predict(image);
+        List results = classifier.predict(image);
         isolateData.responsePort.send(results);
       }
     }

@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:image/image.dart' as imageLib;
 
 import 'package:camera/camera.dart';
+import 'package:image/image.dart' as imageLib;
 import 'package:path_provider/path_provider.dart';
 
 class ImageUtils {
