@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -39,11 +40,21 @@ class _ImagePickerViewState extends State<ImagePickerView> {
   }
 
   void _predict() async {
-    img.Image imageInput = img.decodeImage(_image.readAsBytesSync());
-    TensorImage tensorImage =
-        _classifier.getProcessedImage(TensorImage.fromImage(imageInput));
-    _imageWidget =
-        Image.memory(img.PngEncoder().encodeImage(tensorImage.image));
+    var bytes = _image.readAsBytesSync();
+    img.Image imageInput = img.decodeImage(bytes);
+    TensorImage inputImage = TensorImage.fromImage(imageInput);
+    int padSize = max(inputImage.height, inputImage.width);
+    ImageProcessor imageProcessor = ImageProcessorBuilder()
+        .add(Rot90Op())
+        .add(ResizeWithCropOrPadOp(padSize, padSize))
+        .build();
+    inputImage = imageProcessor.process(inputImage);
+
+    Size s = MediaQuery.of(context).size;
+    print(
+        'W: ${s.width} H: ${imageInput.width * (s.width / imageInput.height)}');
+//    _imageWidget = Image.memory(img.PngEncoder().encodeImage(inputImage.image));
+    _imageWidget = Image.memory(bytes);
     List<Recognition> results = _classifier.predict(imageInput);
     print(results);
     setState(() {
@@ -53,6 +64,7 @@ class _ImagePickerViewState extends State<ImagePickerView> {
 
   @override
   Widget build(BuildContext context) {
+    print("ScreenSize ${MediaQuery.of(context).size}");
     return Scaffold(
 //      appBar: AppBar(
 //        title: Text('TfLite Flutter Helper',

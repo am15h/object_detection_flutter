@@ -82,6 +82,8 @@ class Classifier {
   }
 
   List predict(imageLib.Image image) {
+    print("InputImage: height: ${image.height} width: ${image.width}");
+
     if (_interpreter == null) {
       print("Interpreter not initialized");
       return null;
@@ -113,10 +115,10 @@ class Classifier {
 
     int labelOffset = 1;
 
-    int cropSize = min(inputImage.height, inputImage.width);
+    int padSize = max(image.height, image.width);
 
     ImageProcessor invertProcessor = ImageProcessorBuilder()
-        .add(ResizeWithCropOrPadOp(cropSize, cropSize))
+        .add(ResizeWithCropOrPadOp(padSize, padSize))
         .add(ResizeOp(INPUT_SIZE, INPUT_SIZE, ResizeMethod.BILINEAR))
         .build();
 
@@ -133,11 +135,10 @@ class Classifier {
     for (int i = 0; i < resultsCount; i++) {
       var label = _labels.elementAt(outputClasses.getIntValue(i) + labelOffset);
 
-//      Rect rect = invertProcessor.inverseTransformRect(
-//          locations[i], image.width, image.height);
+      Rect rect = invertProcessor.inverseTransformRect(
+          locations[i], image.width, image.height);
 
-      Rect rect = locations[i];
-
+//      Rect rect = locations[i];
       recognitions.add(
         Recognition(i, label, outputScores.getDoubleValue(i), rect),
       );

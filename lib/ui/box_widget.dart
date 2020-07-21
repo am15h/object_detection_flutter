@@ -32,7 +32,7 @@ class BoxWidget extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(result.label),
-                  Text(result.score.toString()),
+                  Text(result.score.toStringAsFixed(2)),
                 ],
               ),
             ),
