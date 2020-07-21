@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:object_detection/tflite/classifier.dart';
 import 'package:object_detection/tflite/recognition.dart';
 import 'package:object_detection/ui/camera_view_singleton.dart';
 import 'package:object_detection/utils/image_utils.dart';
+import 'package:object_detection/utils/isolate_utils.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 class CameraView extends StatefulWidget {
@@ -22,7 +24,7 @@ class _CameraViewState extends State<CameraView> {
   bool predicting;
   Classifier classifier;
   GlobalKey globalKey = GlobalKey();
-
+  IsolateUtils isolateUtils;
   bool firstImage;
 
   @override
@@ -32,6 +34,8 @@ class _CameraViewState extends State<CameraView> {
     classifier = Classifier();
     predicting = false;
     firstImage = true;
+    isolateUtils = IsolateUtils();
+    isolateUtils.start();
   }
 
   void initializeCamera() async {
@@ -80,11 +84,13 @@ class _CameraViewState extends State<CameraView> {
       });
 
       var uiThreadTimeStart = DateTime.now().millisecondsSinceEpoch;
-      List results = await compute(inference, {
+      Map<String, dynamic> params = {
         "address": classifier.interpreter.address,
         "labels": classifier.labels,
         "image": cameraImage,
-      });
+      };
+//      List results = await compute(inference, params);
+      List<Recognition> results = await inference(params);
       var uiThreadInferenceElapsedTime =
           DateTime.now().millisecondsSinceEpoch - uiThreadTimeStart;
 
@@ -96,12 +102,15 @@ class _CameraViewState extends State<CameraView> {
       });
     }
   }
-}
 
-List inference(Map<String, dynamic> params) {
-  imageLib.Image image = ImageUtils.convertYUV420ToImage(params["image"]);
-  var interpreter = Interpreter.fromAddress(params["address"]);
-  var classifier =
-      Classifier(interpreter: interpreter, labels: params["labels"]);
-  return classifier.predict(image);
+  Future<List<Recognition>> inference(Map<String, dynamic> params) async {
+    ReceivePort responsePort = ReceivePort();
+    if (isolateUtils.sendPort == null) {
+      return [];
+    }
+    isolateUtils.sendPort.send(IsolateData(params["image"], params["address"],
+        params["labels"], responsePort.sendPort));
+    var results = await responsePort.first;
+    return results;
+  }
 }

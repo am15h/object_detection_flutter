@@ -37,7 +37,6 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void resultsCallback(List<Recognition> results) {
-    print(results);
     setState(() {
       this.results = results;
     });

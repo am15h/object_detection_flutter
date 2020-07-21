@@ -309,7 +309,7 @@ packages:
       name: tflite_flutter_helper
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.1.1"
+    version: "0.1.2"
   typed_data:
     dependency: transitive
     description:

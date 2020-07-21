@@ -1,7 +1,10 @@
 import 'dart:isolate';
-
+import 'package:image/image.dart' as imageLib;
 import 'package:camera/camera.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:object_detection/tflite/classifier.dart';
+import 'package:object_detection/tflite/recognition.dart';
+import 'package:object_detection/utils/image_utils.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
 
 class IsolateUtils {
   static const String DEBUG_NAME = "InferenceIsolate";
@@ -10,27 +13,44 @@ class IsolateUtils {
   ReceivePort _receivePort = ReceivePort();
   SendPort _sendPort;
 
-  void start({int interpreterAddress}) async {
-    _isolate = await Isolate.spawn<IsolateData>(
+  SendPort get sendPort => _sendPort;
+
+  void start() async {
+    _isolate = await Isolate.spawn<SendPort>(
       entryPoint,
-      IsolateData(null, interpreterAddress, _receivePort.sendPort),
+      _receivePort.sendPort,
       debugName: DEBUG_NAME,
     );
-
-    _receivePort.listen(isolateListener);
 
     _sendPort = await _receivePort.first;
   }
 
   void isolateListener(message) {}
 
-  void entryPoint(IsolateData isolateData) {}
+  static void entryPoint(SendPort sendPort) async {
+    final port = ReceivePort();
+    sendPort.send(port.sendPort);
+
+    await for (final IsolateData isolateData in port) {
+      if (isolateData != null) {
+        Classifier classifier = Classifier(
+            interpreter:
+                Interpreter.fromAddress(isolateData.interpreterAddress),
+            labels: isolateData.labels);
+        imageLib.Image image =
+            ImageUtils.convertYUV420ToImage(isolateData.cameraImage);
+        List<Recognition> results = classifier.predict(image);
+        isolateData.responsePort.send(results);
+      }
+    }
+  }
 }
 
 class IsolateData {
   CameraImage cameraImage;
   int interpreterAddress;
-  SendPort sendPort;
-
-  IsolateData(this.cameraImage, this.interpreterAddress, this.sendPort);
+  List<String> labels;
+  SendPort responsePort;
+  IsolateData(this.cameraImage, this.interpreterAddress, this.labels,
+      this.responsePort);
 }

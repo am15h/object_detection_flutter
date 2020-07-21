@@ -12,7 +12,7 @@ class Recognition {
 
   Recognition(this._id, this._label, this._score, [this._location]);
 
-  String get id => _id.toString();
+  int get id => _id;
 
   String get label => _label;
 

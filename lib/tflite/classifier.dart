@@ -86,22 +86,35 @@ class Classifier {
   }
 
   List predict(imageLib.Image image) {
+    var predictStartTime = DateTime.now().millisecondsSinceEpoch;
+
     if (_interpreter == null) {
       print("Interpreter not initialized");
       return null;
     }
 
+    var preProcessStart = DateTime.now().millisecondsSinceEpoch;
+
+    // Create TensorImage from image
     TensorImage inputImage = TensorImage.fromImage(image);
 
+    // Pre-process TensorImage
     inputImage = getProcessedImage(inputImage);
 
+    var preProcessElapsedTime =
+        DateTime.now().millisecondsSinceEpoch - preProcessStart;
+
+    // Inputs object for runForMultipleInputs
+    // Use [TensorImage.buffer] or [TensorBuffer.buffer] to pass by reference
     List<Object> inputs = [inputImage.buffer];
 
+    // TensorBuffers for output tensors
     TensorBuffer outputLocations = TensorBufferFloat(_outputShapes[0]);
     TensorBuffer outputClasses = TensorBufferFloat(_outputShapes[1]);
     TensorBuffer outputScores = TensorBufferFloat(_outputShapes[2]);
     TensorBuffer numLocations = TensorBufferFloat(_outputShapes[3]);
 
+    // Outputs map
     Map<int, Object> outputs = {
       0: outputLocations.buffer,
       1: outputClasses.buffer,
@@ -109,21 +122,29 @@ class Classifier {
       3: numLocations.buffer,
     };
 
+    var inferenceTimeStart = DateTime.now().millisecondsSinceEpoch;
     _interpreter.runForMultipleInputs(inputs, outputs);
 
+    var inferenceTimeElapsed =
+        DateTime.now().millisecondsSinceEpoch - inferenceTimeStart;
+
+    // Maximum number of results to show
     int resultsCount = min(NUM_RESULTS, numLocations.getIntValue(0));
 
     List<Recognition> recognitions = [];
 
+    // Using labelOffset = 1 as ??? at index 0
     int labelOffset = 1;
 
     int padSize = max(image.height, image.width);
 
+    // Invert processor to find inverse of bounding box rect
     ImageProcessor invertProcessor = ImageProcessorBuilder()
         .add(ResizeWithCropOrPadOp(padSize, padSize))
         .add(ResizeOp(INPUT_SIZE, INPUT_SIZE, ResizeMethod.BILINEAR))
         .build();
 
+    // Using bounding box utils for easy conversion of tensorbuffer to List<Rect>
     List<Rect> locations = BoundingBoxUtils.convert(
       tensor: outputLocations,
       valueIndex: [1, 0, 3, 2],
@@ -138,6 +159,7 @@ class Classifier {
       var label = _labels.elementAt(outputClasses.getIntValue(i) + labelOffset);
       var score = outputScores.getDoubleValue(i);
 
+      // inverse of rect
       Rect transformedRect = invertProcessor.inverseTransformRect(
           locations[i], image.width, image.height);
 
@@ -147,6 +169,13 @@ class Classifier {
         );
       }
     }
+
+    var predictElapsedTime =
+        DateTime.now().millisecondsSinceEpoch - predictStartTime;
+
+    print(
+        'Classifier.predict | Pre-process: $preProcessElapsedTime ms | Inference: $inferenceTimeElapsed ms | Total: $predictElapsedTime');
+
     return recognitions;
   }
 

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:object_detection/tflite/recognition.dart';
 
-/// Bounding
+/// Individual bounding box
 class BoxWidget extends StatelessWidget {
   final Recognition result;
 
   const BoxWidget({Key key, this.result}) : super(key: key);
   @override
   Widget build(BuildContext context) {
+
     Color color = Colors.primaries[
-        (result.label.length + result.label.codeUnitAt(0)) %
+        (result.label.length + result.label.codeUnitAt(0) + result.id) %
             Colors.primaries.length];
 
     return Positioned(
