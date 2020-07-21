@@ -43,18 +43,6 @@ class _ImagePickerViewState extends State<ImagePickerView> {
   void _predict() async {
     var bytes = _image.readAsBytesSync();
     img.Image imageInput = img.decodeImage(bytes);
-    TensorImage inputImage = TensorImage.fromImage(imageInput);
-    int padSize = max(inputImage.height, inputImage.width);
-    ImageProcessor imageProcessor = ImageProcessorBuilder()
-        .add(Rot90Op())
-        .add(ResizeWithCropOrPadOp(padSize, padSize))
-        .build();
-    inputImage = imageProcessor.process(inputImage);
-
-    Size s = MediaQuery.of(context).size;
-    print(
-        'W: ${s.width} H: ${imageInput.width * (s.width / imageInput.height)}');
-//    _imageWidget = Image.memory(img.PngEncoder().encodeImage(inputImage.image));
     _imageWidget = Image.memory(bytes);
     List<Recognition> results = _classifier.predict(imageInput);
     print(results);
