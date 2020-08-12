@@ -4,24 +4,9 @@ import 'package:camera/camera.dart';
 import 'package:image/image.dart' as imageLib;
 import 'package:path_provider/path_provider.dart';
 
+/// ImageUtils
 class ImageUtils {
-  static int yuv2rgb(int y, int u, int v) {
-    // Convert yuv pixel to rgb
-    int r = (y + v * 1436 / 1024 - 179).round();
-    int g = (y - u * 46549 / 131072 + 44 - v * 93604 / 131072 + 91).round();
-    int b = (y + u * 1814 / 1024 - 227).round();
-
-    // Clipping RGB values to be inside boundaries [ 0 , 255 ]
-    r = r.clamp(0, 255);
-    g = g.clamp(0, 255);
-    b = b.clamp(0, 255);
-
-    return 0xff000000 |
-        ((b << 16) & 0xff0000) |
-        ((g << 8) & 0xff00) |
-        (r & 0xff);
-  }
-
+  /// Converts a [CameraImage] in YUV420 format to [imageLib.Image] in RGB format
   static imageLib.Image convertYUV420ToImage(CameraImage cameraImage) {
     final int width = cameraImage.width;
     final int height = cameraImage.height;
@@ -45,6 +30,24 @@ class ImageUtils {
       }
     }
     return image;
+  }
+
+  /// Convert a single YUV pixel to RGB
+  static int yuv2rgb(int y, int u, int v) {
+    // Convert yuv pixel to rgb
+    int r = (y + v * 1436 / 1024 - 179).round();
+    int g = (y - u * 46549 / 131072 + 44 - v * 93604 / 131072 + 91).round();
+    int b = (y + u * 1814 / 1024 - 227).round();
+
+    // Clipping RGB values to be inside boundaries [ 0 , 255 ]
+    r = r.clamp(0, 255);
+    g = g.clamp(0, 255);
+    b = b.clamp(0, 255);
+
+    return 0xff000000 |
+        ((b << 16) & 0xff0000) |
+        ((g << 8) & 0xff00) |
+        (r & 0xff);
   }
 
   static void saveImage(imageLib.Image image, [int i = 0]) async {

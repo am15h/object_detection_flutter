@@ -9,11 +9,12 @@ import 'package:tflite_flutter_helper/tflite_flutter_helper.dart';
 
 import 'stats.dart';
 
+/// Classifier
 class Classifier {
   /// Instance of Interpreter
   Interpreter _interpreter;
 
-  /// Instance of loaded labels
+  /// Labels file loaded as list
   List<String> _labels;
 
   static const String MODEL_FILE_NAME = "detect.tflite";
@@ -79,6 +80,7 @@ class Classifier {
     }
   }
 
+  /// Pre-process the image
   TensorImage getProcessedImage(TensorImage inputImage) {
     padSize = max(inputImage.height, inputImage.width);
     if (imageProcessor == null) {
@@ -91,7 +93,8 @@ class Classifier {
     return inputImage;
   }
 
-  List predict(imageLib.Image image) {
+  /// Runs object detection on the input image
+  Map<String, dynamic> predict(imageLib.Image image) {
     var predictStartTime = DateTime.now().millisecondsSinceEpoch;
 
     if (_interpreter == null) {
@@ -110,15 +113,15 @@ class Classifier {
     var preProcessElapsedTime =
         DateTime.now().millisecondsSinceEpoch - preProcessStart;
 
-    // Inputs object for runForMultipleInputs
-    // Use [TensorImage.buffer] or [TensorBuffer.buffer] to pass by reference
-    List<Object> inputs = [inputImage.buffer];
-
     // TensorBuffers for output tensors
     TensorBuffer outputLocations = TensorBufferFloat(_outputShapes[0]);
     TensorBuffer outputClasses = TensorBufferFloat(_outputShapes[1]);
     TensorBuffer outputScores = TensorBufferFloat(_outputShapes[2]);
     TensorBuffer numLocations = TensorBufferFloat(_outputShapes[3]);
+
+    // Inputs object for runForMultipleInputs
+    // Use [TensorImage.buffer] or [TensorBuffer.buffer] to pass by reference
+    List<Object> inputs = [inputImage.buffer];
 
     // Outputs map
     Map<int, Object> outputs = {
@@ -129,6 +132,8 @@ class Classifier {
     };
 
     var inferenceTimeStart = DateTime.now().millisecondsSinceEpoch;
+
+    // run inference
     _interpreter.runForMultipleInputs(inputs, outputs);
 
     var inferenceTimeElapsed =
@@ -136,8 +141,6 @@ class Classifier {
 
     // Maximum number of results to show
     int resultsCount = min(NUM_RESULTS, numLocations.getIntValue(0));
-
-    List<Recognition> recognitions = [];
 
     // Using labelOffset = 1 as ??? at index 0
     int labelOffset = 1;
@@ -153,15 +156,23 @@ class Classifier {
       width: INPUT_SIZE,
     );
 
+    List<Recognition> recognitions = [];
+
     for (int i = 0; i < resultsCount; i++) {
-      var label = _labels.elementAt(outputClasses.getIntValue(i) + labelOffset);
+      // Prediction score
       var score = outputScores.getDoubleValue(i);
 
-      // inverse of rect
-      Rect transformedRect = imageProcessor.inverseTransformRect(
-          locations[i], image.height, image.width);
+      // Label string
+      var labelIndex = outputClasses.getIntValue(i) + labelOffset;
+      var label = _labels.elementAt(labelIndex);
 
       if (score > THRESHOLD) {
+        // inverse of rect
+        // [locations] corresponds to the image size 300 X 300
+        // inverseTransformRect transforms it our [inputImage]
+        Rect transformedRect = imageProcessor.inverseTransformRect(
+            locations[i], image.height, image.width);
+
         recognitions.add(
           Recognition(i, label, score, transformedRect),
         );
@@ -171,16 +182,13 @@ class Classifier {
     var predictElapsedTime =
         DateTime.now().millisecondsSinceEpoch - predictStartTime;
 
-//    print(
-//        'Classifier.predict | Pre-process: $preProcessElapsedTime ms | Inference: $inferenceTimeElapsed ms | Total: $predictElapsedTime');
-
-    return [
-      recognitions,
-      Stats(
+    return {
+      "recognitions": recognitions,
+      "stats": Stats(
           totalPredictTime: predictElapsedTime,
           inferenceTime: inferenceTimeElapsed,
           preProcessingTime: preProcessElapsedTime)
-    ];
+    };
   }
 
   /// Gets the interpreter instance
