@@ -38,7 +38,7 @@ class IsolateUtils {
                 Interpreter.fromAddress(isolateData.interpreterAddress),
             labels: isolateData.labels);
         imageLib.Image image =
-            ImageUtils.convertYUV420ToImage(isolateData.cameraImage);
+            ImageUtils.convertCameraImage(isolateData.cameraImage);
         if (Platform.isAndroid) {
           image = imageLib.copyRotate(image, 90);
         }
