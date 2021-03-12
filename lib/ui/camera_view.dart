@@ -82,15 +82,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       // same as screenWidth while maintaining the aspectRatio
       Size screenSize = MediaQuery.of(context).size;
       CameraViewSingleton.screenSize = screenSize;
-
-      if (Platform.isAndroid) {
-        // On Android Platform image is initially rotated by 90 degrees
-        // due to the Flutter Camera plugin
-        CameraViewSingleton.ratio = screenSize.width / previewSize.height;
-      } else {
-        // For iOS
-        CameraViewSingleton.ratio = screenSize.width / previewSize.width;
-      }
+      CameraViewSingleton.ratio = screenSize.width / previewSize.height;
     });
   }
 
