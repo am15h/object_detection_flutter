@@ -160,7 +160,9 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
         cameraController.stopImageStream();
         break;
       case AppLifecycleState.resumed:
-        await cameraController.startImageStream(onLatestImageAvailable);
+        if (!cameraController.value.isStreamingImages) {
+          await cameraController.startImageStream(onLatestImageAvailable);
+        }
         break;
       default:
     }
