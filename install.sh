@@ -3,7 +3,7 @@
 cd "$(dirname "$(readlink -f "$0")")"
 
 URL="https://github.com/am15h/tflite_flutter_plugin/releases/download/"
-TAG="v0.2.0"
+TAG="v0.5.0"
 
 ANDROID_DIR="android/app/src/main/jniLibs/"
 ANDROID_LIB="libtensorflowlite_c.so"
@@ -26,7 +26,7 @@ done
 
 
 download () {
-    wget "${URL}${TAG}/$1"
+    wget "${URL}${TAG}/$1" -O "$1"
     mkdir -p "${ANDROID_DIR}$2/"
     mv $1 "${ANDROID_DIR}$2/${ANDROID_LIB}"
 }
