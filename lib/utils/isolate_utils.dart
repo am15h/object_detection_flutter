@@ -47,6 +47,10 @@ class IsolateUtils {
       }
     }
   }
+
+  void stopIsolate() {
+    _isolate.kill();
+  }
 }
 
 /// Bundles data to pass between Isolate
