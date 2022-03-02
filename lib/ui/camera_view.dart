@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:isolate';
 
 import 'package:camera/camera.dart';
@@ -172,6 +171,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     cameraController.dispose();
+    isolateUtils.killIsolate();
     super.dispose();
   }
 }
